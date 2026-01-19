@@ -1,7 +1,6 @@
 # TranslateGemma FastAPI Service
 
-Production-ready FastAPI service for **Google TranslateGemma** (text → text and image → text/translation)  
-with support for:
+FastAPI service for **Google TranslateGemma** (text → text and image → text/translation) with support for:
 
 - 🧠 **GPU sharding (1+ GPUs)**
 - ⚡ **Quantization**: none / int8 / int4 (bitsandbytes)
@@ -187,3 +186,8 @@ Model: Google TranslateGemma — see license on Hugging Face
 Service code: MIT / Apache-2.0 (your choice)
 
 ---
+
+## Roadmap
+
+* [ ] Prometheus metrics
+* [ ] Multipart image upload
