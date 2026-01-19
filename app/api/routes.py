@@ -79,3 +79,65 @@ async def translate_stream(req: dict):
                 yield _sse("token", {"text": item})
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@router.post("/translate_image_url")
+async def translate_image_url(req: dict):
+    max_new = req.get("max_new_tokens") or settings.generation.default_max_new_tokens
+    if max_new > settings.generation.max_new_tokens_limit:
+        raise HTTPException(400, "max_new_tokens too large")
+
+    # req: { image_url, source_lang_code, target_lang_code, max_new_tokens? }
+    messages = [{
+        "role": "user",
+        "content": [{
+            "type": "image",
+            "source_lang_code": req["source_lang_code"],
+            "target_lang_code": req["target_lang_code"],
+            "url": req["image_url"],
+        }],
+    }]
+
+    async with _sem:
+        out = await asyncio.to_thread(generate_full, messages, max_new)
+    return {"translated_text": out}
+
+
+@router.post("/translate_image_url/stream")
+async def translate_image_url_stream(req: dict):
+    max_new = req.get("max_new_tokens") or settings.generation.default_max_new_tokens
+    if max_new > settings.generation.max_new_tokens_limit:
+        raise HTTPException(400, "max_new_tokens too large")
+
+    messages = [{
+        "role": "user",
+        "content": [{
+            "type": "image",
+            "source_lang_code": req["source_lang_code"],
+            "target_lang_code": req["target_lang_code"],
+            "url": req["image_url"],
+        }],
+    }]
+
+    async def gen():
+        q = asyncio.Queue()
+        async with _sem:
+            threading.Thread(
+                target=stream_worker,
+                args=(messages, max_new, q, _LOOP),
+                daemon=True,
+            ).start()
+
+            yield _sse("ready", {"ok": True})
+            while True:
+                item = await q.get()
+                if item is None:
+                    yield _sse("done", {"ok": True})
+                    break
+                if isinstance(item, Exception):
+                    yield _sse("error", {"error": str(item)})
+                    break
+                yield _sse("token", {"text": item})
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
+
