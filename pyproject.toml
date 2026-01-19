@@ -3,7 +3,6 @@ name = "translategemma-api"
 version = "0.1.0"
 description = "FastAPI service for Google TranslateGemma (text + image URL) with configurable settings and SSE token streaming."
 authors = ["Ivan Loboda"]
-readme = "README.md"
 packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
