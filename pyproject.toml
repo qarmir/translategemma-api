@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "FastAPI service for Google TranslateGemma (text + image URL) with configurable settings and SSE token streaming."
 authors = ["Ivan Loboda"]
 readme = "README.md"
-package-mode = false
+packages = [{ include = "app" }]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
@@ -46,4 +46,4 @@ init_typed = true
 warn_required_dynamic_aliases = true
 
 [tool.poetry.scripts]
-serve = "uvicorn:main"
+serve = "app.server:main"
