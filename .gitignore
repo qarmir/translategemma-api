@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Poetry
+.venv/
+
+# PyTorch
+*.pt
+*.pth
+*.ckpt
+
+# Transformers / HuggingFace
+models/
+checkpoints/
+
+# Environment variables
+.env
+.env.local
+
+# JetBrains IDEs
+.idea/
+
+# macOS
+.DS_Store
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff
+.ruff_cache/

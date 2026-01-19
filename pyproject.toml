@@ -1,0 +1,52 @@
+[tool.poetry]
+name = "translategemma-api"
+version = "0.1.0"
+description = "Translate Gemma API"
+authors = ["Ivan Loboda <loboda.ivan.y@gmail.com>"]
+license = "Proprietary"
+
+packages = [
+    { include = "catchop-bot" },
+]
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+fastapi = "^0.115.0"
+uvicorn = { version = "^0.30.0", extras = ["standard"] }
+pydantic = "^2.8.0"
+pydantic-settings = "^2.4.0"
+pyyaml = "^6.0.1"
+torch = { version = ">=2.4", markers = "platform_system != 'Darwin'" }
+transformers = "^4.56.0"
+accelerate = "^0.34.0"
+safetensors = "^0.4.5"
+huggingface-hub = "^0.34.0"
+pillow = "^10.4.0"
+bitsandbytes = { version = "^0.43.0", markers = "platform_system == 'Linux' and platform_machine == 'x86_64'" }
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.8"
+mypy = "^1.11.0"
+types-PyYAML = "^6.0.12.20240808"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+disallow_untyped_defs = true
+follow_imports = "normal"
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+ignore_missing_imports = false
+disable_error_code = "import-untyped"
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.poetry.scripts]
+serve = "uvicorn:main"
