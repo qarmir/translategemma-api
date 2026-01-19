@@ -1,13 +1,10 @@
 [tool.poetry]
 name = "translategemma-api"
 version = "0.1.0"
-description = "Translate Gemma API"
-authors = ["Ivan Loboda <loboda.ivan.y@gmail.com>"]
-license = "Proprietary"
-
-packages = [
-    { include = "catchop-bot" },
-]
+description = "FastAPI service for Google TranslateGemma (text + image URL) with configurable settings and SSE token streaming."
+authors = ["Ivan Loboda"]
+readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.13"
