@@ -1,0 +1,91 @@
+name: Provider Auto Deploy
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+
+concurrency:
+  group: provider-env-88ab4029
+  cancel-in-progress: true
+
+env:
+  PROVIDER_COMPOSE_FILE: .provider/compose.yml
+  PROVIDER_IMAGE_PREFIX: ghcr.io/${{ github.repository }}
+  PROVIDER_RELEASE: ${{ github.sha }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      compose_digest: ${{ steps.harness.outputs.compose_digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Record deployment harness digest
+        id: harness
+        run: echo "compose_digest=$(sha256sum "$PROVIDER_COMPOSE_FILE" | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push immutable Compose images
+        run: docker compose --file "$PROVIDER_COMPOSE_FILE" build --push
+
+  deploy:
+    needs: build
+    runs-on:
+      - self-hosted
+      - provider
+      - env-88ab4029
+    steps:
+      - name: Request deployment
+        env:
+          PROVIDER_API_URL: https://flow.qarmir.tech
+          PROVIDER_AUDIENCE: https://flow.qarmir.tech
+          PROVIDER_COMPOSE_DIGEST: ${{ needs.build.outputs.compose_digest }}
+          PROVIDER_ENVIRONMENT_ID: env-88ab4029
+          PROVIDER_REGISTRY_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          oidc_response="$(curl --fail --silent --show-error \
+            --get \
+            --data-urlencode "audience=${PROVIDER_AUDIENCE}" \
+            -H "Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}")"
+          oidc_token="$(jq -r .value <<<"${oidc_response}")"
+          payload="$(jq --null-input \
+            --arg commit_sha "${GITHUB_SHA}" \
+            --arg compose_digest "${PROVIDER_COMPOSE_DIGEST}" \
+            --arg registry_username "${GITHUB_ACTOR}" \
+            '{commit_sha: $commit_sha, compose_digest: $compose_digest, registry_username: $registry_username}')"
+          deployment="$(curl --fail --silent --show-error \
+            -H "Authorization: Bearer ${oidc_token}" \
+            -H "X-Provider-Registry-Token: ${PROVIDER_REGISTRY_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary "${payload}" \
+            "${PROVIDER_API_URL}/api/v1/workflow/environments/${PROVIDER_ENVIRONMENT_ID}/deployments")"
+          deployment_id="$(jq -r .id <<<"${deployment}")"
+          for attempt in $(seq 1 90); do
+            result="$(curl --fail --silent --show-error \
+              -H "Authorization: Bearer ${oidc_token}" \
+              "${PROVIDER_API_URL}/api/v1/workflow/environments/${PROVIDER_ENVIRONMENT_ID}/deployments/${deployment_id}")"
+            status="$(jq -r .status <<<"${result}")"
+            case "${status}" in
+              ready) exit 0 ;;
+              failed) echo "Provider deployment failed" >&2; exit 1 ;;
+            esac
+            sleep 5
+          done
+          echo "Provider deployment did not finish in time" >&2
+          exit 1
