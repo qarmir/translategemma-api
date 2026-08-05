@@ -3,8 +3,23 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
+    image: ${PROVIDER_IMAGE_PREFIX}-api:${PROVIDER_RELEASE}
+    restart: unless-stopped
+    expose:
+      - "8000"
     environment:
-      HF_TOKEN: ${HF_TOKEN:?HF_TOKEN must be set}
+      HF_TOKEN: ${HF_TOKEN}
       TG_SERVICE__HOST: 0.0.0.0
       TG_SERVICE__PORT: "8000"
-    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import json, sys, urllib.request; data = json.load(urllib.request.urlopen('http://127.0.0.1:8000/health')); sys.exit(0 if data.get('ok') else 1)",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s

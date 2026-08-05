@@ -5,6 +5,7 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from app.core.config import settings
 from app.model.generator import generate_full, stream_worker
+from app.model.loader import ensure_loaded
 
 router = APIRouter()
 _sem = asyncio.Semaphore(max(1, settings.service.max_concurrent))
@@ -20,6 +21,10 @@ def _startup():
 
 @router.get("/health")
 def health():
+    try:
+        ensure_loaded()
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"model_not_ready: {exc}") from exc
     return {"ok": True}
 
 @router.post("/translate")
@@ -140,4 +145,3 @@ async def translate_image_url_stream(req: dict):
                 yield _sse("token", {"text": item})
 
     return StreamingResponse(gen(), media_type="text/event-stream")
-

@@ -1,4 +1,11 @@
-application_port: 8000
+schema_version: 1
 compose_file: .provider/compose.yml
-service: api
-healthcheck_path: /health
+public_service:
+  name: api
+  port: 8000
+  healthcheck:
+    path: /health
+    timeout_seconds: 120
+deployment:
+  strategy: recreate
+  startup_timeout_seconds: 300
