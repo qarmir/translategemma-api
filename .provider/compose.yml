@@ -1,0 +1,10 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      HF_TOKEN: ${HF_TOKEN:?HF_TOKEN must be set}
+      TG_SERVICE__HOST: 0.0.0.0
+      TG_SERVICE__PORT: "8000"
+    restart: unless-stopped

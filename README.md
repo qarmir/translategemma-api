@@ -111,9 +111,23 @@ export HF_TOKEN=hf_token_here
 poetry run serve
 ```
 
----
+## Docker Compose / Provider deployment
+The repository includes:
+- a root `compose.yaml` for local Docker Compose runs
+- `.provider/compose.yml` and `.provider/deployment.yml` for Provider deployment analysis and rollout
 
-## Health Check
+Requirements:
+- `HF_TOKEN` must be set at deploy time.
+- The application listens on port `8000`.
+- Provider should be configured with `application_port=8000`.
+
+Local validation:
+```bash
+export HF_TOKEN=hf_token_here
+docker compose up --build
+```
+
+Health check:
 ```bash
 curl http://localhost:8000/health | jq .
 ```
@@ -186,8 +200,3 @@ Model: Google TranslateGemma — see license on Hugging Face
 Service code: MIT / Apache-2.0 (your choice)
 
 ---
-
-## Roadmap
-
-* [ ] Prometheus metrics
-* [ ] Multipart image upload
